@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Constant definition
+PROGNAME=$(basename $0)
+VERSION="0.0.1"
+QWH_HOME=$(dirname $0)
+
+# Main procedure
+Main(){
+  ngrok http "${OPTS[@]}" "${PRAMS[@]}" > /dev/null &
+  ( \
+    cd $QWH_HOME/public; \
+    echo "Check ngrok URL https://dashboard.ngrok.com/status"; \
+    python -m CGIHTTPServer ${PRAMS[0]} \
+#    python -m http.server --cgi ${PRAMS[0]} # for Python 3.x \
+  )
+}
+
+# Function definition
+Usage(){
+cat <<EOF
+$PROGNAME - Quick Web Hooker version $VERSION
+Usage: $PROGNAME [ngrok option] [local listen port]
+       qwh --subdomain=nmrmsys --bind-tls=true 8000
+EOF
+}
+
+# getopt
+OPTS=()
+PRAMS=()
+for OPT in "$@"; do
+  case "$OPT" in
+    '-h'|'--help' )
+      Usage
+      exit 1
+      ;;
+    '--version' )
+      echo $VERSION
+      exit 1
+      ;;
+    -*)
+      #OPTS=( ${OPTS[@]} "$1" )
+      OPTS+=( "$1" )
+      shift 1
+      ;;
+    *)
+      if [[ ! -z "$1" ]] && [[ ! "$1" =~ ^-+ ]]; then
+        #PRAMS=( ${PRAMS[@]} "$1" )
+        PRAMS+=( "$1" )
+        shift 1
+      fi
+      ;;
+  esac
+done
+
+if [ -z $PRAMS ]; then
+  #echo "$PROGNAME: too few arguments" 1>&2
+  #echo "Try '$PROGNAME --help' for more information." 1>&2
+  #exit 1
+  PRAMS+=( "8000" )
+fi
+
+# call main
+Main
